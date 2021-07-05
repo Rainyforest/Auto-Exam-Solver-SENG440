@@ -1,2 +1,3 @@
 # exam-solver
-Worked overnight and wrote this exam solver, hoping the program would auto ace seng440 exam for me. 
+An exam solver that automatically generates solutions for seng 440 midterm.
+Need to adjust the order of different types of problems and plug in the values to output the result.
