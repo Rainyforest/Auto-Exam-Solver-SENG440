@@ -40,11 +40,11 @@ int summation( int *samples) {
     '''
 )
 
-p5 = FixedPointArithmeticSolver(
+# p5 = FixedPointArithmeticSolver(
 
-)
+# )
 
-problems = [p1,p2,p3,p4,p5]
+problems = [p1,p2,p3,p4]
 
 f = open("demo.txt", "a")
 [f.write("\n============================\nProblem {}\n".format(i) + p.out())

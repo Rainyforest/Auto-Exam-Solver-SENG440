@@ -1,11 +1,11 @@
-from sys import float_info
+from sys import flags, float_info
 import math
+from typing import Text
 
 class ProblemSolver:
     def __init__(self,  **kwargs):
         pass
-
-    # Output latex paragraph for the problem
+    
     def output():
         return ""
 
@@ -146,8 +146,143 @@ The final result is {f_min} error:({f_min_accuracy_left:.3f},{f_min_accuracy_rig
         return text
     
 
-
+class Oprand():
+    def __init__(self,name,value,sf) -> None:
+        self.name = name
+        self.value = value
+        self.sf = sf
 
 class FixedPointArithmeticSolver(ProblemSolver):
-    pass
 
+    # def cut_bits(self, decimal, bits):
+
+    def real_to_integer(self, var_name, real, real_range, bits):
+        # get scaling factor
+        range_bound = max(abs(real_range[0]),abs(real_range[1]))
+        bound_exp = math.ceil(math.log(range_bound,2))
+        res_exp = bits - 1
+        sf_exp = res_exp - bound_exp
+        decimal = round(2**sf_exp*real)
+        sign = 1 if real < 0 else 0
+        binary = bin(decimal & (2**bits-1))[2:].zfill(bits)
+        hexadecimal = hex(int(binary,2))
+        large_var_name = var_name.capitalize()
+        out = 0
+        text = '''
+Real to Integer
+-----------------------------
+Range of the real number {var_name}         : {real_range}
+Bound in 2's power                 : (-2^{bound_exp}, 2^{bound_exp})
+Required bits (remove sign bit)    : (-2^{res_exp}, 2^{res_exp})
+Scaling factor                     : 2^{sf_exp}
+{large_var_name} = round(2^{sf_exp}*{real}) = {decimal} = ({binary})b = ({hexadecimal})h
+        '''.format(var_name = var_name,
+                    real_range=real_range,
+                    bound_exp=bound_exp,
+                    res_exp=res_exp,
+                    sf_exp = sf_exp,
+                    large_var_name = large_var_name,
+                    real=real,
+                    decimal=decimal,
+                    binary=binary,
+                    hexadecimal = hexadecimal
+                    )
+        return [Oprand(large_var_name,decimal,sf_exp),text]
+    
+    def fractional_multiplier(self,op1,op2,bits): #Pdp
+        factor = (bits-1)-(op1.sf+op2.sf)
+        pdp = 2**(factor)*op1.value*op2.value
+        binary = bin(pdp & (2**bits-1))[2:].zfill(bits)
+        hexadecimal = hex(int(binary,2))
+        text = '''
+Fractional Multiplier
+-----------------------------
+{X}*{Y} = {X}/(sf{X}) * {Y}/(sf{Y}) = {X}{Y} * 2^factor / 2^{bits}
+We can get factor = {bits} - 1 - （sf{X} + sf{Y}）= {factor}
+By multiplying {X},{Y},2^{factor} and then mask with the required number of bits,
+we get {X}*{Y} = {pdp} = ({binary})b = ({hexadecimal})h
+        '''.format(
+            X=op1.name,
+            Y=op2.name,
+            bits=bits,
+            factor=factor,
+            pdp=pdp,
+            binary=binary,
+            hexadecimal = hexadecimal
+        )
+        return [Oprand("Pdp",pdp,bits),text]
+
+    def integer_multiplier(self,op1,op2,bits): #Pdp
+        factor = (bits-1)-(op1.sf+op2.sf)
+        pdp = 2**(factor)*op1.value*op2.value
+        binary = bin(pdp & (2**bits-1))[2:].zfill(bits)
+        hexadecimal = hex(int(binary,2))
+        text = '''
+Integer Multiplier
+-----------------------------
+{X}*{Y} = {X}/(sf{X}) * {Y}/(sf{Y}) = {X}{Y} * 2^factor / 2^{bits}
+We can get factor = {bits} - 1 - （sf{X} + sf{Y}）= {factor}
+By multiplying {X},{Y},2^{factor} and then mask with the required number of bits,
+we get {X}*{Y} = {pdp} = ({binary})b = ({hexadecimal})h
+        '''.format(
+            X=op1.name,
+            Y=op2.name,
+            bits=bits,
+            factor=factor,
+            pdp=pdp,
+            binary=binary,
+            hexadecimal = hexadecimal
+        )
+        return [Oprand("Pdp",pdp,bits),text]
+
+    def V_Neumann_rounding(self, op, bits):
+        shift_bits = op.sf - bits
+        value = op.value
+        flag = op.value & 2**(shift_bits)-1 > 0
+        is_need = '' if flag else "don't "
+        value = value >> 9 
+        if flag: value = value | 1
+        binary = bin(value & (2**bits-1))[2:].zfill(bits)
+        text = '''
+V_Neumann_rounding  
+-----------------------------
+We shift {name} to round it to {bits}
+{opbits} - {bits} = {shift_bits} need to be shifted,
+also before shifting we check if they have any one in it
+it turns out we {is_need}need to set the least significant bit 1.
+The output is finally {value} = ({binary})b.
+        '''.format(
+            name=op.name,
+            bits=bits,
+            opbits=op.sf,
+            shift_bits=shift_bits,
+            is_need=is_need,
+            value=value,
+            binary=binary
+        )
+        return [Oprand("P",value,bits), text]
+
+def main():
+    c = FixedPointArithmeticSolver()
+    [outx,textx] = c.real_to_integer(
+        var_name='x',
+        real = 1.6,
+        real_range=(-1.3,1.7),
+        bits = 15
+    )
+    [outy,texty] = c.real_to_integer(
+        var_name='y',
+        real = -0.23,
+        real_range=(-0.27,0.29),
+        bits = 13
+    )
+    [outpdp,text3] = c.fractional_multiplier(outx,outy,28)
+    [outp,text4] = c.V_Neumann_rounding(outpdp,19)
+
+    print(textx)
+    print(texty)
+    print(text3)
+    print(text4)
+
+if __name__ == "__main__":
+    main()

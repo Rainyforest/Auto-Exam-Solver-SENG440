@@ -67,3 +67,139 @@ int summation( int *samples) {
     return sum;
 }
     
+============================
+Problem 1
+
+From the problem we can get:
+clock frequency f_clk = f_osc / divider = 10.0MHz
+clock period    t_clk = 1 / f_clk = 0.1
+
+Max Frequency
+Due to the intrinsic error, minimum period should be more than 1 clock period
+Therefore t_min = 2 * t_clk = 0.2
+f_max = 1 / t_min = 5.0MHz
+
+Accuracy
+The counter recording periods has ±1 bit error,
+Max frequency accuracy range: ( 1 / (t_min + t_ck), 1 / (t_min - t_ck))
+The final result is 5.0MHz error:(-1.667,5.000)MHz
+
+Min Frequency
+Due to the intrinsic error, maximum period should be as large as the counter could handle
+Therefore t_max = counter_max * t_clk = 99999 * 0.1 = 9999.900000000001
+f_min = 1 / t_max = 100.001Hz
+
+Accuracy
+The counter recording periods has ±1 bit error,
+Max frequency accuracy range: ( 1 / (t_max + t_ck), 1 / (t_max - t_ck))
+The final result is 100.001Hz error:(-0.001,0.001)Hz
+                
+============================
+Problem 2
+
+As we can observe, 
+
+the conversion function is non-linear, thus we need to find a point where the real curve and ideal line have largest difference.
+If the function is regular like quadratic, we could take a derivative   
+         
+The value before compression is 0.75
+The value after compression is 0.5
+
+We calculate the loss in accuracy by:
+    loss = log2(0.75) - (log2(0.5)) = 0.585
+
+Considering other potential error as well,
+It is safe to trust 11 bits
+        
+============================
+Problem 3
+Amount of information for a: p_a = -log2(v) = 3.322
+Amount of information for b: p_b = -log2(v) = 3.322
+Amount of information for c: p_c = -log2(v) = 3.322
+Amount of information for d: p_d = -log2(v) = 3.322
+Amount of information for e: p_e = -log2(v) = 3.322
+Amount of information for f: p_f = -log2(v) = 3.322
+Amount of information for g: p_g = -log2(v) = 1.322
+Bit rate = baud * amount of bits = 25381.019 bits/sec
+Byte rate = bit rate / 8 = 3172.627 bits/sec
+
+============================
+Problem 4
+
+register int i;
+int summation( int *samples) {
+    register int sum = 0;
+    for( i=0; i < 128; i++) {
+        sum += samples[i];
+    }
+    return sum;
+}
+    
+============================
+Problem 1
+
+From the problem we can get:
+clock frequency f_clk = f_osc / divider = 10.0MHz
+clock period    t_clk = 1 / f_clk = 0.1
+
+Max Frequency
+Due to the intrinsic error, minimum period should be more than 1 clock period
+Therefore t_min = 2 * t_clk = 0.2
+f_max = 1 / t_min = 5.0MHz
+
+Accuracy
+The counter recording periods has ±1 bit error,
+Max frequency accuracy range: ( 1 / (t_min + t_ck), 1 / (t_min - t_ck))
+The final result is 5.0MHz error:(-1.667,5.000)MHz
+
+Min Frequency
+Due to the intrinsic error, maximum period should be as large as the counter could handle
+Therefore t_max = counter_max * t_clk = 99999 * 0.1 = 9999.900000000001
+f_min = 1 / t_max = 100.001Hz
+
+Accuracy
+The counter recording periods has ±1 bit error,
+Max frequency accuracy range: ( 1 / (t_max + t_ck), 1 / (t_max - t_ck))
+The final result is 100.001Hz error:(-0.001,0.001)Hz
+                
+============================
+Problem 2
+
+As we can observe, 
+
+the conversion function is non-linear, thus we need to find a point where the real curve and ideal line have largest difference.
+If the function is regular like quadratic, we could take a derivative   
+         
+The value before compression is 0.75
+The value after compression is 0.5
+
+We calculate the loss in accuracy by:
+    loss = log2(0.75) - (log2(0.5)) = 0.585
+
+Considering other potential error as well,
+It is safe to trust 11 bits
+        
+============================
+Problem 3
+Amount of information for a: p_a = -log2(v) = 3.322
+Amount of information for b: p_b = -log2(v) = 3.322
+Amount of information for c: p_c = -log2(v) = 3.322
+Amount of information for d: p_d = -log2(v) = 3.322
+Amount of information for e: p_e = -log2(v) = 3.322
+Amount of information for f: p_f = -log2(v) = 3.322
+Amount of information for g: p_g = -log2(v) = 1.322
+Bit rate = baud * amount of bits = 25381.019 bits/sec
+Byte rate = bit rate / 8 = 3172.627 bits/sec
+
+============================
+Problem 4
+
+register int i;
+int summation( int *samples) {
+    register int sum = 0;
+    for( i=0; i < 128; i++) {
+        sum += samples[i];
+    }
+    return sum;
+}
+    
