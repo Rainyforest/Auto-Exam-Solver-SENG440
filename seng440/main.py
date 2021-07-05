@@ -1,33 +1,28 @@
 from solvers import *
 
-p1 = StandardPeripheralsCountersSolver(
-    f_osc=50,
-    divider = 5,
+p3 = StandardPeripheralsCountersSolver(
+    f_osc=100,
+    divider = 1,
     counter_base = 10,
-    counter_digits = 5)
+    counter_digits = 6)
 
-p2 = StandardPeripheralsADConversionSolver(
+p4 = StandardPeripheralsADConversionSolver(
     is_linear = False,
     is_pure_expansion = False,
-    converter_bits = 12,
+    converter_bits = 13,
     pre_compression = 0.75,
     post_compression = 0.5
 )
 
-p3 = StandardPeripheralsUARTSolver(
+p5 = StandardPeripheralsUARTSolver(
     prob_dicts = {
-        'a':1/10,
-        'b':1/10,
-        'c':1/10,
-        'd':1/10,
-        'e':1/10,
-        'f':1/10,
-        'g':4/10,
+        'a':0.25,
+        'b':0.25,
+        'c':0.5,
     },
-    baud = 19200
 )
 
-p4 = SoftwareOptimizationTechniquesSolver(
+p1 = SoftwareOptimizationTechniquesSolver(
     result = '''
 register int i;
 int summation( int *samples) {
@@ -40,11 +35,11 @@ int summation( int *samples) {
     '''
 )
 
-# p5 = FixedPointArithmeticSolver(
+p2 = FixedPointArithmeticSolver(
+    
+)
 
-# )
-
-problems = [p1,p2,p3,p4]
+problems = [p1,p2,p3,p4,p5]
 
 f = open("demo.txt", "a")
 [f.write("\n============================\nProblem {}\n".format(i) + p.out())

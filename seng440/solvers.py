@@ -22,12 +22,13 @@ class StandardPeripheralsUARTSolver(ProblemSolver):
     
     def out(self):
         text = ''''''
-        amount_of_bits = 0
+        sum_of_bits = 0
         for k,v in self.prob_dicts.items():
             amount_of_bits = -math.log(v,2)
             text += "Amount of information for {k}: p_{k} = -log2(v) = {res:.3f}\n".format(k=k,v=v,res=amount_of_bits)
+            sum_of_bits+=amount_of_bits
         if self.baud:
-            bit_rate = amount_of_bits*self.baud
+            bit_rate = sum_of_bits/3*self.baud
             text += "Bit rate = baud * amount of bits = {bit_rate:.3f} bits/sec\n".format(bit_rate=bit_rate)
             text += "Byte rate = bit rate / 8 = {byte_rate:.3f} bits/sec\n".format(byte_rate=bit_rate/8)
         return text
@@ -153,7 +154,26 @@ class Oprand():
         self.sf = sf
 
 class FixedPointArithmeticSolver(ProblemSolver):
-
+    def out(self):
+        # c = FixedPointArithmeticSolver()
+        # [outx,textx] = c.real_to_integer(
+        #     var_name='x',
+        #     real = 0.11,
+        #     real_range=(-0.11,0.11),
+        #     bits = 16
+        # )
+        # [outy,texty] = c.real_to_integer(
+        #     var_name='y',
+        #     real = -0.39,
+        #     real_range=(-0.41,0.44),
+        #     bits = 13
+        # )
+    
+        # [outpdp,textm] = c.fractional_multiplier(outx,outy,29)
+        # [outp,textr] = c.V_Neumann_rounding(outpdp,21)
+        
+        return ''
+      
     # def cut_bits(self, decimal, bits):
 
     def real_to_integer(self, var_name, real, real_range, bits):
@@ -192,7 +212,7 @@ Scaling factor                     : 2^{sf_exp}
     def fractional_multiplier(self,op1,op2,bits): #Pdp
         factor = (bits-1)-(op1.sf+op2.sf)
         pdp = 2**(factor)*op1.value*op2.value
-        binary = bin(pdp & (2**bits-1))[2:].zfill(bits)
+        binary = bin(int(pdp) & (2**bits-1))[2:].zfill(bits)
         hexadecimal = hex(int(binary,2))
         text = '''
 Fractional Multiplier
@@ -210,39 +230,40 @@ we get {X}*{Y} = {pdp} = ({binary})b = ({hexadecimal})h
             binary=binary,
             hexadecimal = hexadecimal
         )
-        return [Oprand("Pdp",pdp,bits),text]
+        return [Oprand("Pdp",pdp,op1.sf+op2.sf+1),text]
 
     def integer_multiplier(self,op1,op2,bits): #Pdp
-        factor = (bits-1)-(op1.sf+op2.sf)
-        pdp = 2**(factor)*op1.value*op2.value
-        binary = bin(pdp & (2**bits-1))[2:].zfill(bits)
+        pdp = op1.value*op2.value
+        binary = bin(pdp & (2**bits-1))[2:]
+        sign = '1' if pdp<0 else '0'
+        # filling
+        binary = sign*(bits-len(binary))+binary if len(binary)<bits else binary
         hexadecimal = hex(int(binary,2))
         text = '''
 Integer Multiplier
 -----------------------------
-{X}*{Y} = {X}/(sf{X}) * {Y}/(sf{Y}) = {X}{Y} * 2^factor / 2^{bits}
-We can get factor = {bits} - 1 - （sf{X} + sf{Y}）= {factor}
-By multiplying {X},{Y},2^{factor} and then mask with the required number of bits,
+{X}*{Y} = {X}/(sf{X}) * {Y}/(sf{Y}) = {X}{Y} / 2^{bits}
+By multiplying {X},{Y} and mask with the required number of bits,
 we get {X}*{Y} = {pdp} = ({binary})b = ({hexadecimal})h
         '''.format(
             X=op1.name,
             Y=op2.name,
             bits=bits,
-            factor=factor,
             pdp=pdp,
             binary=binary,
             hexadecimal = hexadecimal
         )
-        return [Oprand("Pdp",pdp,bits),text]
+        return [Oprand("Pdp",pdp,op1.sf+op2.sf),text]
 
     def V_Neumann_rounding(self, op, bits):
         shift_bits = op.sf - bits
         value = op.value
-        flag = op.value & 2**(shift_bits)-1 > 0
+        flag = int(op.value) & 2**(shift_bits)-1 > 0
         is_need = '' if flag else "don't "
-        value = value >> 9 
+        value = int(value) >> shift_bits 
         if flag: value = value | 1
         binary = bin(value & (2**bits-1))[2:].zfill(bits)
+        hexadecimal = hex(int(binary,2))
         text = '''
 V_Neumann_rounding  
 -----------------------------
@@ -250,7 +271,7 @@ We shift {name} to round it to {bits}
 {opbits} - {bits} = {shift_bits} need to be shifted,
 also before shifting we check if they have any one in it
 it turns out we {is_need}need to set the least significant bit 1.
-The output is finally {value} = ({binary})b.
+The output is finally {value} = ({binary})b = ({hexadecimal})h.
         '''.format(
             name=op.name,
             bits=bits,
@@ -258,31 +279,89 @@ The output is finally {value} = ({binary})b.
             shift_bits=shift_bits,
             is_need=is_need,
             value=value,
-            binary=binary
+            binary=binary,
+            hexadecimal=hexadecimal
         )
-        return [Oprand("P",value,bits), text]
+        return [Oprand("P",value,op.sf-shift_bits), text]
 
+    def truncate(self, op, bits):
+        shift_bits = op.sf - bits
+        value = op.value
+        value = value >> shift_bits 
+        binary = bin(value & (2**bits-1))[2:].zfill(bits)
+        hexadecimal = hex(int(binary,2))
+        text = '''
+Truncate  
+-----------------------------
+We shift {name} to round it to {bits}
+{opbits} - {bits} = {shift_bits} need to be shifted,
+also before shifting we check if they have any one in it
+The output is finally {value} = ({binary})b = ({hexadecimal})h.
+        '''.format(
+            name=op.name,
+            bits=bits,
+            opbits=op.sf,
+            shift_bits=shift_bits,
+            value=value,
+            binary=binary,
+            hexadecimal=hexadecimal
+        )
+        return [Oprand("R",value,op.sf-shift_bits), text]
+
+    def absolute(self, op, bits):
+        decimal = ~op.value + 1
+        binary = bin(decimal & (2**bits-1))[2:].zfill(bits)
+        hexadecimal = hex(int(binary,2))
+        text = '''
+Absolute {name}
+-----------------------------
+Get absolute value of {name}, the result is ({binary})b = ({hexadecimal})h.
+        '''.format(
+            name=op.name,
+            binary=binary,
+            hexadecimal=hexadecimal
+        )
+        return [Oprand("ABS({})".format(op.name),decimal,bits), text]
+
+    def add(self, op1, op2, bits):
+        decimal = op1.value + op2.value
+        print(op1.sf)
+        print(op2.sf)
+        binary = bin(decimal & (2**bits-1))[2:].zfill(bits)
+        hexadecimal = hex(int(binary,2))
+        text = '''
+Add
+-----------------------------
+Get the sum of value {name1} and {name2}, the result is ({binary})b = ({hexadecimal})h.
+        '''.format(
+            name1=op1.name,
+            name2=op2.name,
+            binary=binary,
+            hexadecimal=hexadecimal
+        )
+        return [Oprand("SUM",decimal,bits),text]
+        
 def main():
     c = FixedPointArithmeticSolver()
     [outx,textx] = c.real_to_integer(
         var_name='x',
-        real = 1.6,
-        real_range=(-1.3,1.7),
-        bits = 15
+        real = 0.11,
+        real_range=(-0.11,0.11),
+        bits = 16
     )
     [outy,texty] = c.real_to_integer(
         var_name='y',
-        real = -0.23,
-        real_range=(-0.27,0.29),
+        real = -0.39,
+        real_range=(-0.41,0.44),
         bits = 13
     )
-    [outpdp,text3] = c.fractional_multiplier(outx,outy,28)
-    [outp,text4] = c.V_Neumann_rounding(outpdp,19)
 
+    [outpdp,textm] = c.fractional_multiplier(outx,outy,29)
+    [outp,textr] = c.V_Neumann_rounding(outpdp,21)
     print(textx)
     print(texty)
-    print(text3)
-    print(text4)
+    print(textm)
+    print(textr)
 
 if __name__ == "__main__":
     main()

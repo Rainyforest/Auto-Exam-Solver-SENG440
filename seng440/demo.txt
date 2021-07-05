@@ -2,204 +2,148 @@
 ============================
 Problem 1
 
+char i;
+void routine( restrict unsigned char *a,
+    restrict unsigned short int *b,
+    restrict unsigned char *c,
+    restrict unsigned int *d) {
+    
+    register local_a = (unsigned char)a[0];
+    register local_b = (unsigned int)b[0];
+    for( i^=i; !(i&16); i+=2) {
+        local_b = local_a << 8;
+        d[i] = (local_a * c[i]) >> 7;
+        if ((local_b & 0x8000))
+            local_b = local_a;
+        local_a = a[i+1]
+        b[i] = local_b;
+
+        local_b = local_a << 8;
+        d[i+1] = (local_a * c[i+1]) >> 7;
+        if ((local_b & 0x8000))
+            local_b = local_a;
+        b[i+1] = local_b;
+        local_a = a[i+2]
+    };
+}
+â€¢ Operator strength reduction (2 marks)
+    number / 126 = number * (1/(128-2)) = number * (1/2^7) * (1/(1-2^-6)) = number*2^(-7)
+    according to taylor formula, (1/(1-2^-6)) is very close to 1.
+    
+â€¢ Use local variables instead of global variables (1 mark)
+    use register local_a and local_b to replace array memory access.
+
+â€¢ Use restrict pointers (1 mark)
+    see the function
+
+â€¢ Optimize the initialization, incrementation, and/or exit condition of the for loop (1 mark)
+    see the for loop
+
+â€¢ Would predicate operations increase the execution speed and why? (1 mark)
+    No because when calculating e.g. x<y, compiler would first calculate x-y then compare with 0,
+    Therefore there're multiple operations in it.
+
+â€¢ Loop unrolling (1 mark)
+    see the for loop
+
+============================
+Problem 2
+
+Real to Integer
+-----------------------------
+Range of the real number x         : (-0.11, 0.11)
+Bound in 2's power                 : (-2^-3, 2^-3)
+Required bits (remove sign bit)    : (-2^15, 2^15)
+Scaling factor                     : 2^18
+X = round(2^18*0.11) = 28836 = (0111000010100100)b = (0x70a4)h
+
+
+Real to Integer
+-----------------------------
+Range of the real number y         : (-0.41, 0.44)
+Bound in 2's power                 : (-2^-1, 2^-1)
+Required bits (remove sign bit)    : (-2^12, 2^12)
+Scaling factor                     : 2^13
+Y = round(2^13*-0.39) = -3195 = (1001110000101)b = (0x1385)h
+
+
+Fractional Multiplier
+-----------------------------
+X*Y = X/(sfX) * Y/(sfY) = XY * 2^factor / 2^29
+We can get factor = 29 - 1 - (sfX + sfY)= -3
+By multiplying X,Y,2^-3 and then mask with the required number of bits,
+we get X*Y = -11516377.5 = (11111010100000100011000100111)b = (0x1f504627)h
+
+
+V_Neumann_rounding
+-----------------------------
+We shift Pdp to round it to 21
+32 - 21 = 11 need to be shifted,
+also before shifting we check if they have any one in it
+it turns out we need to set the least significant bit 1.
+The output P is finally -5623 = (111111110101000001001)b = (0x1fea09)h.
+
+============================
+Problem 3
+
 From the problem we can get:
-clock frequency f_clk = f_osc / divider = 10.0MHz
-clock period    t_clk = 1 / f_clk = 0.1
+clock frequency f_clk = f_osc / divider = 100.0MHz
+clock period    t_clk = 1 / f_clk = 0.01
 
 Max Frequency
 Due to the intrinsic error, minimum period should be more than 1 clock period
-Therefore t_min = 2 * t_clk = 0.2
-f_max = 1 / t_min = 5.0MHz
+Therefore t_min = 2 * t_clk = 0.02
+f_max = 1 / t_min = 50.0MHz
 
 Accuracy
-The counter recording periods has ±1 bit error,
+The counter recording periods has ï¿½1 bit error,
 Max frequency accuracy range: ( 1 / (t_min + t_ck), 1 / (t_min - t_ck))
-The final result is 5.0MHz error:(-1.667,5.000)MHz
+The final result is 50.0MHz error:(-16.667,50.000)MHz
 
 Min Frequency
 Due to the intrinsic error, maximum period should be as large as the counter could handle
-Therefore t_max = counter_max * t_clk = 99999 * 0.1 = 9999.900000000001
-f_min = 1 / t_max = 100.001Hz
+Therefore t_max = counter_max * t_clk = 999999 * 0.01 = 9999.99
+f_min = 1 / t_max = 100.000Hz
 
 Accuracy
-The counter recording periods has ±1 bit error,
+The counter recording periods has ï¿½1 bit error,
 Max frequency accuracy range: ( 1 / (t_max + t_ck), 1 / (t_max - t_ck))
-The final result is 100.001Hz error:(-0.001,0.001)Hz
+The final result is 100.000Hz error:(-0.0001,0.0001)Hz (the error is small, we can accept that)
                 
 ============================
-Problem 2
+Problem 4
 
 As we can observe, 
 
 the conversion function is non-linear, thus we need to find a point where the real curve and ideal line have largest difference.
 If the function is regular like quadratic, we could take a derivative   
          
-The value before compression is 0.75
-The value after compression is 0.5
+k(idea) =  1/100
+Take derivative of V_weight, when weight = 25, it has max compression
+And V_weight = 0.5
+
+The value before compression is 0.5
+The value after compression is 0.25
 
 We calculate the loss in accuracy by:
-    loss = log2(0.75) - (log2(0.5)) = 0.585
+    loss = log2(0.5) - (log2(0.25)) = 1
 
 Considering other potential error as well,
-It is safe to trust 11 bits
+It is safe to trust 12 bits
         
 ============================
-Problem 3
-Amount of information for a: p_a = -log2(v) = 3.322
-Amount of information for b: p_b = -log2(v) = 3.322
-Amount of information for c: p_c = -log2(v) = 3.322
-Amount of information for d: p_d = -log2(v) = 3.322
-Amount of information for e: p_e = -log2(v) = 3.322
-Amount of information for f: p_f = -log2(v) = 3.322
-Amount of information for g: p_g = -log2(v) = 1.322
-Bit rate = baud * amount of bits = 25381.019 bits/sec
-Byte rate = bit rate / 8 = 3172.627 bits/sec
+Problem 5
+Amount of information for a: p_a = -log2(v) = 2.000
+Amount of information for b: p_b = -log2(v) = 2.000
+Amount of information for c: p_c = -log2(v) = 1.000
+
+there're 4A's, 4B's, 8C's
+Therefore amount of information = 4*2 + 4*2 + 8*1 = 24
+
+symbol change ratio = 16 symbol/24 bit
+baud rate = 16 symbol/24 bit * 9600bits / sec = 6400
 
 ============================
-Problem 4
-
-register int i;
-int summation( int *samples) {
-    register int sum = 0;
-    for( i=0; i < 128; i++) {
-        sum += samples[i];
-    }
-    return sum;
-}
-    
-============================
-Problem 1
-
-From the problem we can get:
-clock frequency f_clk = f_osc / divider = 10.0MHz
-clock period    t_clk = 1 / f_clk = 0.1
-
-Max Frequency
-Due to the intrinsic error, minimum period should be more than 1 clock period
-Therefore t_min = 2 * t_clk = 0.2
-f_max = 1 / t_min = 5.0MHz
-
-Accuracy
-The counter recording periods has ±1 bit error,
-Max frequency accuracy range: ( 1 / (t_min + t_ck), 1 / (t_min - t_ck))
-The final result is 5.0MHz error:(-1.667,5.000)MHz
-
-Min Frequency
-Due to the intrinsic error, maximum period should be as large as the counter could handle
-Therefore t_max = counter_max * t_clk = 99999 * 0.1 = 9999.900000000001
-f_min = 1 / t_max = 100.001Hz
-
-Accuracy
-The counter recording periods has ±1 bit error,
-Max frequency accuracy range: ( 1 / (t_max + t_ck), 1 / (t_max - t_ck))
-The final result is 100.001Hz error:(-0.001,0.001)Hz
-                
-============================
-Problem 2
-
-As we can observe, 
-
-the conversion function is non-linear, thus we need to find a point where the real curve and ideal line have largest difference.
-If the function is regular like quadratic, we could take a derivative   
-         
-The value before compression is 0.75
-The value after compression is 0.5
-
-We calculate the loss in accuracy by:
-    loss = log2(0.75) - (log2(0.5)) = 0.585
-
-Considering other potential error as well,
-It is safe to trust 11 bits
-        
-============================
-Problem 3
-Amount of information for a: p_a = -log2(v) = 3.322
-Amount of information for b: p_b = -log2(v) = 3.322
-Amount of information for c: p_c = -log2(v) = 3.322
-Amount of information for d: p_d = -log2(v) = 3.322
-Amount of information for e: p_e = -log2(v) = 3.322
-Amount of information for f: p_f = -log2(v) = 3.322
-Amount of information for g: p_g = -log2(v) = 1.322
-Bit rate = baud * amount of bits = 25381.019 bits/sec
-Byte rate = bit rate / 8 = 3172.627 bits/sec
-
-============================
-Problem 4
-
-register int i;
-int summation( int *samples) {
-    register int sum = 0;
-    for( i=0; i < 128; i++) {
-        sum += samples[i];
-    }
-    return sum;
-}
-    
-============================
-Problem 1
-
-From the problem we can get:
-clock frequency f_clk = f_osc / divider = 10.0MHz
-clock period    t_clk = 1 / f_clk = 0.1
-
-Max Frequency
-Due to the intrinsic error, minimum period should be more than 1 clock period
-Therefore t_min = 2 * t_clk = 0.2
-f_max = 1 / t_min = 5.0MHz
-
-Accuracy
-The counter recording periods has ±1 bit error,
-Max frequency accuracy range: ( 1 / (t_min + t_ck), 1 / (t_min - t_ck))
-The final result is 5.0MHz error:(-1.667,5.000)MHz
-
-Min Frequency
-Due to the intrinsic error, maximum period should be as large as the counter could handle
-Therefore t_max = counter_max * t_clk = 99999 * 0.1 = 9999.900000000001
-f_min = 1 / t_max = 100.001Hz
-
-Accuracy
-The counter recording periods has ±1 bit error,
-Max frequency accuracy range: ( 1 / (t_max + t_ck), 1 / (t_max - t_ck))
-The final result is 100.001Hz error:(-0.001,0.001)Hz
-                
-============================
-Problem 2
-
-As we can observe, 
-
-the conversion function is non-linear, thus we need to find a point where the real curve and ideal line have largest difference.
-If the function is regular like quadratic, we could take a derivative   
-         
-The value before compression is 0.75
-The value after compression is 0.5
-
-We calculate the loss in accuracy by:
-    loss = log2(0.75) - (log2(0.5)) = 0.585
-
-Considering other potential error as well,
-It is safe to trust 11 bits
-        
-============================
-Problem 3
-Amount of information for a: p_a = -log2(v) = 3.322
-Amount of information for b: p_b = -log2(v) = 3.322
-Amount of information for c: p_c = -log2(v) = 3.322
-Amount of information for d: p_d = -log2(v) = 3.322
-Amount of information for e: p_e = -log2(v) = 3.322
-Amount of information for f: p_f = -log2(v) = 3.322
-Amount of information for g: p_g = -log2(v) = 1.322
-Bit rate = baud * amount of bits = 25381.019 bits/sec
-Byte rate = bit rate / 8 = 3172.627 bits/sec
-
-============================
-Problem 4
-
-register int i;
-int summation( int *samples) {
-    register int sum = 0;
-    for( i=0; i < 128; i++) {
-        sum += samples[i];
-    }
-    return sum;
-}
-    
+Problem 6
+1 bit if the alphabet has only 2 symbols
+if alphabet has size n, then -log2(1/n) bits
